@@ -1,0 +1,28 @@
+on:
+  schedule:
+    - cron:  '0 18 * * *'
+  workflow_dispatch:
+
+name: build
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: just
+        run: |
+          git clone https://github.com/XTLS/Xray-core.git 
+          cd Xray-core && go mod download
+          CGO_ENABLED=0 go build -o build -trimpath -ldflags "-s -w -buildid=" ./main
+          mv build ../
+          rm -rf ../Xray-core
+      - name: me
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add .
+          git commit --allow-empty -m "$(git log -1 --pretty=%s)"
+          git push
+          
